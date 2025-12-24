@@ -1,4 +1,4 @@
-package com.example.spider_spring;
+package com.example.spider_spring.controller;
 
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
