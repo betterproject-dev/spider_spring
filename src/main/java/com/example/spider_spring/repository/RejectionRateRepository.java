@@ -11,8 +11,16 @@ import com.example.spider_spring.domain.RejectionRates;
 
 @Repository
 public interface RejectionRateRepository extends JpaRepository<RejectionRates, Integer>{
-	// 특정 호기의 최근 데이터 7개를 가져오는 쿼리 (이름을 확 줄였습니다)
-    @Query(value = "SELECT * FROM rejection_rates WHERE machine_number = :machineId " +
-                   "ORDER BY created_at DESC LIMIT 7", nativeQuery = true)
-    List<RejectionRates> findRecent(@Param("machineId") Integer machineId);
+	// 1. 오늘 데이터만 가져오기 (시간순 정렬)
+	@Query(value = "SELECT * FROM rejection_rates WHERE machine_number = :machineId " +
+            "AND created_at >= CURDATE() " +
+            "AND created_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY) " +
+            "ORDER BY created_at ASC", nativeQuery = true)
+	List<RejectionRates> findTodayRates(@Param("machineId") Integer machineId);
+
+    // 2. 직전 7일 평균 데이터 가져오기 (최신순 7개)
+	@Query(value = "SELECT * FROM rejection_rates WHERE machine_number = :machineId " +
+			"AND created_at < CURDATE() " + // 오늘 이전 데이터만
+            "ORDER BY created_at DESC LIMIT 7", nativeQuery = true)
+	List<RejectionRates> findLast7Days(@Param("machineId") Integer machineId);
 }

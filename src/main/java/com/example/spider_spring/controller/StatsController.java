@@ -42,25 +42,25 @@ public class StatsController {
             @RequestParam(value = "type", defaultValue = "today") String type) {
 		System.out.println("LOG: 요청 들어옴! 머신ID: " + machineId + ", 타입: " + type);
         
-        // 데이터 가져오기 (Top 7 혹은 오늘 전체 등 기획에 따라 조절 가능)
-        List<RejectionRates> rates = rejectionRateRepository.findRecent(machineId);
-        
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM-dd");
+		List<RejectionRates> rates;
+	    DateTimeFormatter formatter;
 
-        List<RejectionRatesDTO> response = rates.stream().map(r -> {
-        	LocalDateTime ldt = r.getCreatedAt().toLocalDateTime();
-        	// LocalDateTime 혹은 Timestamp에서 시간/날짜 추출
-            // 오늘 데이터면 시간(HH:mm) 표시 (예: 14:30)
-        	String date = "today".equals(type)
-        		? ldt.format(timeFormatter)
-                // 7일 데이터면 날짜(MM-dd) 표시 (예: 12-30)
-                : ldt.format(dateFormatter);
-            return new RejectionRatesDTO(date, r.getRejectionRate());
-          })
-          .sorted(Comparator.comparing(RejectionRatesDTO::getCreatedAt)) // 차트 표시를 위해 시간순 정렬
-          .collect(Collectors.toList());
+	    if ("today".equals(type)) {
+	        // 오늘 데이터 조회
+	        rates = rejectionRateRepository.findTodayRates(machineId);
+	        formatter = DateTimeFormatter.ofPattern("HH:mm");
+	    } else {
+	        // 7일 데이터 조회 (데이터가 거꾸로 나오지 않게 여기서 다시 정렬)
+	        rates = rejectionRateRepository.findLast7Days(machineId);
+	        rates.sort(Comparator.comparing(RejectionRates::getCreatedAt)); // 시간순 재정렬
+	        formatter = DateTimeFormatter.ofPattern("MM-dd");
+	    }
 
-        return ResponseEntity.ok(response);
+	    List<RejectionRatesDTO> response = rates.stream().map(r -> {
+	        String label = r.getCreatedAt().toLocalDateTime().format(formatter);
+	        return new RejectionRatesDTO(label, r.getRejectionRate());
+	    }).collect(Collectors.toList());
+
+	    return ResponseEntity.ok(response);
     }
 }
