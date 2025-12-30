@@ -1,5 +1,8 @@
 package com.example.spider_spring.controller;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,22 +38,27 @@ public class StatsController {
 	// 선 그래프용 (불량률 추이)
 	@GetMapping("/rejection-trend/{machineId}")
     public ResponseEntity<List<RejectionRatesDTO>> getTrend(
-            @PathVariable Integer machineId,
-            @RequestParam(defaultValue = "today") String type) {
+            @PathVariable("machineId") Integer machineId,
+            @RequestParam(value = "type", defaultValue = "today") String type) {
+		System.out.println("LOG: 요청 들어옴! 머신ID: " + machineId + ", 타입: " + type);
         
         // 데이터 가져오기 (Top 7 혹은 오늘 전체 등 기획에 따라 조절 가능)
         List<RejectionRates> rates = rejectionRateRepository.findRecent(machineId);
+        
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM-dd");
 
         List<RejectionRatesDTO> response = rates.stream().map(r -> {
+        	LocalDateTime ldt = r.getCreatedAt().toLocalDateTime();
         	// LocalDateTime 혹은 Timestamp에서 시간/날짜 추출
             // 오늘 데이터면 시간(HH:mm) 표시 (예: 14:30)
         	String date = "today".equals(type)
-        		? r.getCreatedAt().toLocalDateTime().toLocalTime().toString().substring(0, 5)
+        		? ldt.format(timeFormatter)
                 // 7일 데이터면 날짜(MM-dd) 표시 (예: 12-30)
-                : r.getCreatedAt().toString().substring(5, 10);
+                : ldt.format(dateFormatter);
             return new RejectionRatesDTO(date, r.getRejectionRate());
           })
-          .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt())) // 차트 표시를 위해 시간순 정렬
+          .sorted(Comparator.comparing(RejectionRatesDTO::getCreatedAt)) // 차트 표시를 위해 시간순 정렬
           .collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
