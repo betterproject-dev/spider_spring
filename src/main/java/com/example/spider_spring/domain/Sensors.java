@@ -37,8 +37,8 @@ public class Sensors {
 	@CreationTimestamp
 	private Timestamp createdAt;
 	
-	@Column(name = "temperature")
-	private Float temperature;
+	@Column(name = "temperature_DS18B20")
+	private Float temperature_DS18B20;
 	
 	@Column(name = "humidity")
 	private Float humidity;
