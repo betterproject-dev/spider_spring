@@ -19,6 +19,8 @@ public class AlertEventDTO {
     private Timestamp endedAt;
     private Timestamp acknowledgedAt;
     
+    private String mode;
+    
     public AlertEventDTO(AlertEvent alertEvent) {
     	this.id = alertEvent.getId();
         this.machineId = (alertEvent.getMachine() != null ? alertEvent.getMachine().getId() : null);
