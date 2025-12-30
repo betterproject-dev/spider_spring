@@ -1,0 +1,58 @@
+package com.example.spider_spring.controller;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.spider_spring.domain.RejectionRatesDTO;
+import com.example.spider_spring.domain.DefectsDTO;
+import com.example.spider_spring.domain.RejectionRates;
+import com.example.spider_spring.repository.DefectsRepository;
+import com.example.spider_spring.repository.RejectionRateRepository;
+
+@RestController
+@RequestMapping("/api/stats")
+public class StatsController {
+
+	@Autowired
+	private DefectsRepository defectsRepository;
+	@Autowired
+	private RejectionRateRepository rejectionRateRepository;
+	
+	// 막대 그래프용 (불량 유형별 통계)
+	@GetMapping("/defect-summary")
+	public ResponseEntity<List<DefectsDTO>> getSummary() {
+		return ResponseEntity.ok(defectsRepository.countDefectsByType());
+	}
+	
+	// 선 그래프용 (불량률 추이)
+	@GetMapping("/rejection-trend/{machineId}")
+    public ResponseEntity<List<RejectionRatesDTO>> getTrend(
+            @PathVariable Integer machineId,
+            @RequestParam(defaultValue = "today") String type) {
+        
+        // 데이터 가져오기 (Top 7 혹은 오늘 전체 등 기획에 따라 조절 가능)
+        List<RejectionRates> rates = rejectionRateRepository.findRecent(machineId);
+
+        List<RejectionRatesDTO> response = rates.stream().map(r -> {
+        	// LocalDateTime 혹은 Timestamp에서 시간/날짜 추출
+            // 오늘 데이터면 시간(HH:mm) 표시 (예: 14:30)
+        	String date = "today".equals(type)
+        		? r.getCreatedAt().toLocalDateTime().toLocalTime().toString().substring(0, 5)
+                // 7일 데이터면 날짜(MM-dd) 표시 (예: 12-30)
+                : r.getCreatedAt().toString().substring(5, 10);
+            return new RejectionRatesDTO(date, r.getRejectionRate());
+          })
+          .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt())) // 차트 표시를 위해 시간순 정렬
+          .collect(Collectors.toList());
+
+        return ResponseEntity.ok(response);
+    }
+}
