@@ -31,8 +31,21 @@ public class StatsController {
 	
 	// 막대 그래프용 (불량 유형별 통계)
 	@GetMapping("/defect-summary")
-	public ResponseEntity<List<DefectsDTO>> getSummary() {
-		return ResponseEntity.ok(defectsRepository.countDefectsByType());
+	public ResponseEntity<List<DefectsDTO>> getSummary(
+			@RequestParam(value = "type", defaultValue = "today") String type) {
+		
+		LocalDateTime start;
+		LocalDateTime end = LocalDateTime.now().plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+		
+		if("7days".equalsIgnoreCase(type) || "week".equalsIgnoreCase(type)) {
+			// 현재로부터 7일 전 00:00부터
+			start = LocalDateTime.now().minusDays(7).withHour(0).withMinute(0).withSecond(0).withNano(0);
+		} else {
+			// 오늘 00:00부터
+			start = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+		}
+		
+		return ResponseEntity.ok(defectsRepository.countDefectsByPeriod(start, end));
 	}
 	
 	// 선 그래프용 (불량률 추이)
@@ -57,8 +70,13 @@ public class StatsController {
 	    }
 
 	    List<RejectionRatesDTO> response = rates.stream().map(r -> {
-	        String label = r.getCreatedAt().toLocalDateTime().format(formatter);
-	        return new RejectionRatesDTO(label, r.getRejectionRate());
+	        String formattedDate = r.getCreatedAt().toLocalDateTime().format(formatter);
+	        return new RejectionRatesDTO(
+	        		formattedDate, 
+	        		r.getRejectionRate(), 
+	        		r.getTotalInspected(), 
+	        		r.getTotalRejected()
+	        );
 	    }).collect(Collectors.toList());
 
 	    return ResponseEntity.ok(response);

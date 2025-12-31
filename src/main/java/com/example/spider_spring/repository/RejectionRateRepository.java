@@ -1,5 +1,6 @@
 package com.example.spider_spring.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,4 +24,11 @@ public interface RejectionRateRepository extends JpaRepository<RejectionRates, I
 			"AND created_at < CURDATE() " + // 오늘 이전 데이터만
             "ORDER BY created_at DESC LIMIT 7", nativeQuery = true)
 	List<RejectionRates> findLast7Days(@Param("machineId") Integer machineId);
+	
+	// 특정 머신의 특정 시간 이후 데이터 한 건 찾기
+    // 같은 분(Minute)에 이미 데이터가 있는지 확인하여 덮어쓰기 위해 사용합니다.
+    @Query("SELECT r FROM RejectionRates r WHERE r.machine.id = :machineId AND r.createdAt >= :after")
+    java.util.Optional<RejectionRates> findByMachineIdAndCreatedAtAfter(
+            @Param("machineId") Integer machineId, 
+            @Param("after") LocalDateTime after);
 }

@@ -3,11 +3,9 @@ package com.example.spider_spring.service;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.spider_spring.domain.DefectType;
 import com.example.spider_spring.domain.Machines;
 import com.example.spider_spring.domain.RejectionRates;
 import com.example.spider_spring.repository.DefectsRepository;
@@ -21,28 +19,26 @@ public class StatsService {
 	@Autowired private DefectsRepository defectsRepository;
 	@Autowired private RejectionRateRepository rejectionRateRepository;
 
-	@Scheduled(fixedRate = 60000) // 1분 임시 설정
 	@Transactional
-	public void updateMachineStats() {
-		Integer machineId = 1; // 예시로 1호기 설정
-		LocalDateTime ago = LocalDateTime.now().minusMinutes(1);
+	public void updateMachineStats(Integer machineId) {
+		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime startOfMinute = now.withSecond(0).withNano(0); // 현재 분의 시작 시점
 		
-		// 최근 1분 동안의 데이터만 집계
-		long total = defectsRepository.countTotalAfter(machineId, ago);
-		long rejected = defectsRepository.countRejectedAfter(machineId, DefectType.Label, ago);
+		// 해당 분의 전체 데이터 다시 집계 (방금 들어온 데이터 포함)
+		long total = defectsRepository.countTotalAfter(machineId, startOfMinute);
+		long rejected = defectsRepository.countRejectedAfter(machineId, startOfMinute);
 		
-		// 최근 1분간 검사 데이터가 0개라면 저장하지 않고 종료 (카메라 미작동 혹은 제품 통과 안 함)
-		if (total == 0) {
-			System.out.println("LOG: 최근 1분간 검사 데이터가 없어 통계를 생성하지 않습니다.");
-			return;
-		}
+		// 검사 데이터가 0개라면 저장하지 않고 종료 (카메라 미작동 혹은 제품 통과 안 함)
+		if (total == 0)	return;
 		
 		// 데이터가 있을 때만 불량률 계산
 		double rate = ((double) rejected / total) * 100;
 		rate = Math.round(rate * 100) / 100.0; // 소수점 둘째자리 반올림
 		
-		// 엔티티 생성 및 저장
-		RejectionRates stats = new RejectionRates();
+		// 같은 분(Minute)에 이미 저장된 통계가 있는지 확인 (업데이트 혹은 새로 생성)
+		// 1분에 데이터가 10개 들어와도 row는 1개만 유지
+		RejectionRates stats = rejectionRateRepository.findByMachineIdAndCreatedAtAfter(machineId, startOfMinute)
+				.orElse(new RejectionRates());
 		
 		// Machine 객체 매핑 (연관관계 설정)
 		Machines machine = new Machines();
@@ -55,6 +51,6 @@ public class StatsService {
 		
 		rejectionRateRepository.save(stats);
 		
-		System.out.println("LOG: " + machineId + "호기 불량률 업데이트 완료 -> " + rate + "%");
+		System.out.println("LOG: 실시간 데이터 유입으로 통계 갱신 완료 -> " + rate + "%");
 	}
 }
