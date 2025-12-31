@@ -35,6 +35,8 @@ public interface AlertEventRepository extends JpaRepository<AlertEvent, Integer>
     // 진행 중 + 특정 레벨 (최신순)  -> 전역 긴급 모달용
     List<AlertEvent> findByEndedAtIsNullAndLevelOrderByStartedAtDesc(AlertLevel level);
     
+    AlertEvent findTopByEndedAtIsNullAndLevelAndAcknowledgedAtIsNullOrderByIdDesc(AlertLevel level);
+    
     // acknowledged_at 찍기
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update AlertEvent a set a.acknowledgedAt = CURRENT_TIMESTAMP " + 

@@ -101,33 +101,28 @@ public class AlertEventService {
 	@Transactional(readOnly = true)
 	public AlertEventDTO getNextEmergencyForModal() {
 
-	    // ACK 안 한 EMERGENCY (최신 1건)
-	    List<AlertEvent> unacked =
-	        alertEventRepository.findByEndedAtIsNullAndLevelOrderByStartedAtDesc(
-	            AlertLevel.EMERGENCY
-	        ).stream()
-	         .filter(e -> e.getAcknowledgedAt() == null)
-	         .toList();
+		 // ACK 안 한 EMERGENCY 최신 1건 (id desc)
+	    AlertEvent unacked =
+	        alertEventRepository
+	            .findTopByEndedAtIsNullAndLevelAndAcknowledgedAtIsNullOrderByIdDesc(AlertLevel.EMERGENCY);
 
-	    if (!unacked.isEmpty()) {
-	    	AlertEventDTO dto = new AlertEventDTO(unacked.get(0));
-	    	dto.setMode("ALERT");
+	    if (unacked != null) {
+	        AlertEventDTO dto = new AlertEventDTO(unacked);
+	        dto.setMode("ALERT");
 	        return dto;
 	    }
 
-	    // ACK 했고 + RECHECK_MINUTES 지난 것 중 가장 오래된 것
-	    Timestamp before =beforeMinutes(RECHECK_MINUTES);
-
+	    //  ACK 했고 + 10분 지난 것 중 가장 오래된 것 (recheck용)
+	    Timestamp before = beforeMinutes(RECHECK_MINUTES);
 	    List<AlertEvent> rechecks =
 	        alertEventRepository.findRecheckTargets(AlertLevel.EMERGENCY, before);
 
 	    if (!rechecks.isEmpty()) {
-	    	AlertEventDTO dto = new AlertEventDTO(rechecks.get(0));
-	    	dto.setMode("RECHECK");
+	        AlertEventDTO dto = new AlertEventDTO(rechecks.get(0));
+	        dto.setMode("RECHECK");
 	        return dto;
 	    }
 
-	    // 아무것도 없음
 	    return null;
 	}
 
