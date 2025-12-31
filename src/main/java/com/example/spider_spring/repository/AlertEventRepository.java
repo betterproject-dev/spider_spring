@@ -29,6 +29,9 @@ public interface AlertEventRepository extends JpaRepository<AlertEvent, Integer>
         Integer machineId, AlertLevel level
     );
     
+    // 이벤트 완료
+    List<AlertEvent> findByEndedAtIsNotNullAndStartedAtAfterOrderByStartedAtDesc(Timestamp since);
+    
     // 진행 중(STOP) 알림
     List<AlertEvent> findByEndedAtIsNullOrderByStartedAtDesc();
     
@@ -39,15 +42,14 @@ public interface AlertEventRepository extends JpaRepository<AlertEvent, Integer>
     
     // acknowledged_at 찍기
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update AlertEvent a set a.acknowledgedAt = CURRENT_TIMESTAMP " + 
-    		"where a.id = :id and a.acknowledgedAt is null")
-    int acknowledge(@Param("id") Integer id);
+    @Query("update AlertEvent a set a.acknowledgedAt = :ts where a.id = :id and a.acknowledgedAt is null")
+    int acknowledge(@Param("id") Integer id, @Param("ts") Timestamp ts);
     
     // 종료 처리: ended_at 찍기 (이미 종료됐으면 무시), resolve = 문제 해결 처리
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update AlertEvent a set a.endedAt = CURRENT_TIMESTAMP " +
-    		"where a.id = :id and a.endedAt is null")
-    int resolve(@Param("id") Integer id);
+    @Query("update AlertEvent a set a.endedAt = :ts where a.id = :id and a.endedAt is null")
+    int resolve(@Param("id") Integer id, @Param("ts") Timestamp ts);
+    
     
     @Query("""
     		  SELECT a FROM AlertEvent a

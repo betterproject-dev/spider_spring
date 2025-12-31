@@ -55,7 +55,7 @@ public class AlertEventController {
 	}
 	
 	// 알림 1건 상세(10분 후 확인창에서 사용)
-	@GetMapping("/{id}")
+	@GetMapping("/{id:\\d+}")
     public AlertEventDTO getOne(@PathVariable Integer id) {
 		return alertEventService.getAlert(id);
 	}
@@ -72,6 +72,11 @@ public class AlertEventController {
 	    public ResponseEntity<?> resolve(@PathVariable Integer id) {
 		 boolean ok = alertEventService.resolve(id);
 		 return ResponseEntity.ok(Map.of("ok", ok));
+	 }
+	 
+	 @GetMapping("/resolved")
+	 public List<AlertEventDTO> getResolved() {
+	   return alertEventService.getResolvedAlertsLast7Days();
 	 }
 	
 }

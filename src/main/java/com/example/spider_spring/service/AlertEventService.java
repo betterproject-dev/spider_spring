@@ -22,9 +22,14 @@ public class AlertEventService {
 	
 	private final AlertEventRepository alertEventRepository;
 	
+	
 	// 숫자 상수
 	private static final long ALERT_DAYS = 7;            // 전체/호기 알림 조회 범위(일)
 	private static final long RECHECK_MINUTES = 10;      // ACK 후 재확인까지 대기(분)
+	
+	private static Timestamp nowUtcTs() {
+	    return Timestamp.from(Instant.now()); // ✅ UTC
+	}
 	
 	private static Timestamp sinceDays(long days) {
 	   return Timestamp.from(Instant.now().minus(days, ChronoUnit.DAYS));
@@ -72,13 +77,22 @@ public class AlertEventService {
 				.toList();
 	}
 	
+	// 완료 상태
+	@Transactional(readOnly = true)
+	public List<AlertEventDTO> getResolvedAlertsLast7Days() {
+	  Timestamp since = sinceDays(ALERT_DAYS);
+	  return alertEventRepository
+	      .findByEndedAtIsNotNullAndStartedAtAfterOrderByStartedAtDesc(since)
+	      .stream().map(AlertEventDTO::new).toList();
+	}
+	
 	// 모달 "확인" 버튼 -> ACK 저장
 	@Transactional
 	public boolean acknowledge(Integer alertEventId) {
 		if (!alertEventRepository.existsById(alertEventId)) {
 			throw new NoSuchElementException("AlertEvent not found: " + alertEventId);
 		}
-		return alertEventRepository.acknowledge(alertEventId) > 0;
+		return alertEventRepository.acknowledge(alertEventId, nowUtcTs()) > 0;
 	}
 	
 	// "정상 가동" 선택 -> 이벤트 종료
@@ -87,7 +101,7 @@ public class AlertEventService {
 		if (!alertEventRepository.existsById(alertEventId)) {
 			throw new NoSuchElementException("AlertEvent not found: " + alertEventId);
 		}
-		return alertEventRepository.resolve(alertEventId) > 0;
+		return alertEventRepository.resolve(alertEventId, nowUtcTs()) > 0;
 	}
 	
 	// 10분 후 확인창 띄울 때: 현재 이벤트가 아직 진행 중인지 확인

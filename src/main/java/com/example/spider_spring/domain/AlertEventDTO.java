@@ -4,11 +4,12 @@ import java.sql.Timestamp;
 
 import lombok.Data;
 
+
 @Data
 public class AlertEventDTO {
 	
 	private Integer id;
-    private Integer machineNumber;
+    private Integer machineId;
     private String machineLocation;
     private AlertLevel level;
     private Float dangerScore;
@@ -23,7 +24,7 @@ public class AlertEventDTO {
     
     public AlertEventDTO(AlertEvent alertEvent) {
     	this.id = alertEvent.getId();
-        this.machineNumber = (alertEvent.getMachine() != null ? alertEvent.getMachine().getId() : null);
+        this.machineId = (alertEvent.getMachine() != null ? alertEvent.getMachine().getId() : null);
         this.machineLocation = (alertEvent.getMachine() != null ? alertEvent.getMachine().getLocation() : null);
         this.level = alertEvent.getLevel();
         this.dangerScore = alertEvent.getDangerScore();
