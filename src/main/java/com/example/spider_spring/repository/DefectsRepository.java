@@ -19,10 +19,13 @@ public interface DefectsRepository extends JpaRepository<Defects, Integer>{
     long countTotalAfter(@Param("id") Integer id, @Param("after") LocalDateTime after);
 
     // 특정 시간 이후 불량 검사수
-    @Query("SELECT COUNT(d) FROM Defects d WHERE d.machine.id = :id AND d.defectType != :type AND d.createdAt > :after")
-    long countRejectedAfter(@Param("id") Integer id, @Param("type") DefectType type, @Param("after") LocalDateTime after);
+    @Query("SELECT COUNT(d) FROM Defects d WHERE d.machine.id = :id AND d.createdAt > :after")
+    long countRejectedAfter(@Param("id") Integer id, @Param("after") LocalDateTime after);
 
     @Query("SELECT new com.example.spider_spring.domain.DefectsDTO(d.defectType, COUNT(d)) " +
-           "FROM Defects d GROUP BY d.defectType")
-    List<DefectsDTO> countDefectsByType();
+           "FROM Defects d " +
+    	   "WHERE d.createdAt >= :startDate AND d.createdAt < :endDate " +
+    	   "GROUP BY d.defectType")
+    List<DefectsDTO> countDefectsByPeriod(@Param("startDate") LocalDateTime startDate,
+    									  @Param("endDate") LocalDateTime endDate);
 }
