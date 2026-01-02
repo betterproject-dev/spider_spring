@@ -21,6 +21,7 @@ public class StatsService {
 
 	@Transactional
 	public void updateMachineStats(Integer machineId) {
+		System.out.println("LOG: 메서드 진입 성공");
 		LocalDateTime now = LocalDateTime.now();
 		LocalDateTime startOfMinute = now.withSecond(0).withNano(0); // 현재 분의 시작 시점
 		
