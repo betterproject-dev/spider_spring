@@ -17,7 +17,7 @@ public class HeartbeatService {
         this.repo = repo;
     }
 
-    // 🔹 라즈베리파이 → 생존 신호
+    //  라즈베리파이 → 생존 신호
     public void update(Integer machineId) {
 
         Heartbeat heartbeat = repo.findById(machineId)
@@ -32,7 +32,7 @@ public class HeartbeatService {
         repo.save(heartbeat);
     }
 
-    // 🔹 프론트 / 관제 → 상태 확인
+    //  프론트 / 관제 → 상태 확인
     public String checkStatus(Integer machineId) {
 
         return repo.findById(machineId)
