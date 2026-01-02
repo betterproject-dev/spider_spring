@@ -65,7 +65,8 @@ public class AlertEvent {
 
     @Column(name = "ended_at")
     private Timestamp endedAt;
-
+    
+    // 관리자가 이 알림을 확인 클릭한 시간
     @Column(name = "acknowledged_at")
     private Timestamp acknowledgedAt;
 
@@ -76,7 +77,7 @@ public class AlertEvent {
             startedAt = new Timestamp(System.currentTimeMillis());
         }
         if (level == null) {
-            level = AlertLevel.WARNING;
+            level = AlertLevel.EMERGENCY;
         }
         if (title == null) {
             title = "긴급 알림";
