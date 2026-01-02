@@ -21,7 +21,6 @@ public class StatsService {
 	@Autowired private DefectsRepository defectsRepository;
 	@Autowired private RejectionRateRepository rejectionRateRepository;
 
-	@Scheduled(fixedRate = 60000) // 1분 임시 설정
 	@Transactional
 	public void updateMachineStats() {
 		Integer machineId = 1; // 예시로 1호기 설정
