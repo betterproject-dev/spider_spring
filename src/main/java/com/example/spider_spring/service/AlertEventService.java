@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import com.example.spider_spring.domain.AlertEventDTO;
 import com.example.spider_spring.domain.AlertLevel;
 import com.example.spider_spring.repository.AlertEventRepository;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 public class AlertEventService {
 	
 	private final AlertEventRepository alertEventRepository;
-	
 	
 	// 숫자 상수
 	private static final long ALERT_DAYS = 7;            // 전체/호기 알림 조회 범위(일)
@@ -38,6 +39,31 @@ public class AlertEventService {
 	private static Timestamp beforeMinutes(long minutes) {
 		return Timestamp.from(Instant.now().minus(minutes, ChronoUnit.MINUTES));
 	}
+	
+	@Value("${spider.admin-pin}")
+	private String adminPin;
+	
+	private String normalizePin(String s) {
+		if (s == null) return null;
+		// 앞뒤 공백 제거 후, 양끝이 따옴표면 제거
+		s = s.trim();
+		if((s.startsWith("\"") && s.endsWith("\"")) || (s.startsWith("'") && s.endsWith("'"))) {
+			s = s.substring(1, s.length() - 1);
+		}
+		return s.trim();
+	}
+	
+	private boolean isValidPin(String pin) {
+		String p = normalizePin(pin);
+		String a = normalizePin(adminPin);
+		return p != null && a != null && p.equals(a);
+	}
+	
+	@PostConstruct
+	public void checkPinLoaded() {
+	  System.out.println("adminPin loaded? = [" + adminPin + "]");
+	}
+	
 	
 	@Transactional(readOnly = true)
 	public List<AlertEventDTO> getAllAlerts() {
@@ -58,25 +84,7 @@ public class AlertEventService {
 				.toList();
 	}
 	
-	// 몇 호기 전체 알림
-	@Transactional(readOnly = true)
-	public List<AlertEventDTO> getAlertsByMachineLast7Days(Integer machineId) {
-	    Timestamp since = sinceDays(ALERT_DAYS);;
-	    return alertEventRepository
-	            .findByMachine_IdAndStartedAtAfterOrderByStartedAtDesc(machineId, since)
-	            .stream().map(AlertEventDTO::new).toList();
-	}
-	
-	// 몇 호기 현재 STOP 상태
-	@Transactional(readOnly = true)
-	public List<AlertEventDTO> getActiveAlertsByMachine(Integer machineId) {
-		return alertEventRepository
-				.findByMachine_IdAndEndedAtIsNullOrderByStartedAtDesc(machineId)
-				.stream()
-				.map(AlertEventDTO::new)
-				.toList();
-	}
-	
+
 	// 완료 상태
 	@Transactional(readOnly = true)
 	public List<AlertEventDTO> getResolvedAlertsLast7Days() {
@@ -138,6 +146,31 @@ public class AlertEventService {
 	    }
 
 	    return null;
+	}
+	
+	@Transactional
+	public boolean resolveActiveByMachine(Integer machineId) {
+	  AlertEvent ongoing = alertEventRepository
+	      .findTopByMachine_IdAndEndedAtIsNullAndLevelOrderByStartedAtDesc(
+	          machineId, AlertLevel.EMERGENCY
+	      );
+
+	  if (ongoing == null) return false;
+	  return alertEventRepository.resolve(ongoing.getId(), nowUtcTs()) > 0;
+	}
+	
+	@Transactional
+	public boolean resolveWithPin(Integer alertEventId, String pin) {
+		if (!alertEventRepository.existsById(alertEventId)) {
+			throw new NoSuchElementException("AlertEvent not found: " + alertEventId);
+		}
+		
+		if (!isValidPin(pin)) {
+			// 400으로 내려가게 컨트롤러에서 처리할 예정
+			throw new IllegalArgumentException("INVALID_PIN");
+		}
+		
+		return alertEventRepository.resolve(alertEventId, nowUtcTs()) > 0;
 	}
 
 }

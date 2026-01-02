@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,18 +43,6 @@ public class AlertEventController {
 	    return ResponseEntity.ok(dto);
 	}
 	
-	// 특정 호기 알림 전체 (최근 7일) 
-	@GetMapping("/machine/{machineId}")
-	public List<AlertEventDTO> getByMachine(@PathVariable Integer machineId) {
-		return alertEventService.getAlertsByMachineLast7Days(machineId);
-	}
-	
-	// 특정 호기 진행중 알림
-	@GetMapping("/machine/{machineId}/active")
-	public List<AlertEventDTO> getActiveByMachine(@PathVariable Integer machineId) {
-		return alertEventService.getActiveAlertsByMachine(machineId);
-	}
-	
 	// 알림 1건 상세(10분 후 확인창에서 사용)
 	@GetMapping("/{id:\\d+}")
     public AlertEventDTO getOne(@PathVariable Integer id) {
@@ -69,14 +58,27 @@ public class AlertEventController {
 	
 	// "정상 가동" 선택 -> ended_at 기록 (이벤트 종료)
 	 @PostMapping("/{id}/resolve")
-	    public ResponseEntity<?> resolve(@PathVariable Integer id) {
-		 boolean ok = alertEventService.resolve(id);
-		 return ResponseEntity.ok(Map.of("ok", ok));
+	    public ResponseEntity<?> resolve(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+		 String pin = body.get("pin");
+		 
+		 try {
+			 boolean ok = alertEventService.resolveWithPin(id, pin);
+			 return ResponseEntity.ok(Map.of("ok", ok));
+		 } catch (IllegalArgumentException e) {
+			 if("INVALID_PIN".equals(e.getMessage())) {
+				 return ResponseEntity.badRequest().body(
+				   Map.of("ok", false, "message", "관리자 PIN이 올바르지 않습니다.")		 
+				);
+			 }
+			 return ResponseEntity.badRequest().body(
+			    Map.of("ok", false, "message", "요청이 올바르지 않습니다.")		 
+			);
+		 }
 	 }
 	 
 	 @GetMapping("/resolved")
 	 public List<AlertEventDTO> getResolved() {
 	   return alertEventService.getResolvedAlertsLast7Days();
 	 }
-	
+
 }

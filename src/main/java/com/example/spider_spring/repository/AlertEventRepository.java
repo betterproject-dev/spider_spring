@@ -18,25 +18,11 @@ public interface AlertEventRepository extends JpaRepository<AlertEvent, Integer>
 	// 전체 알림 7일 이내
     List<AlertEvent> findByStartedAtAfterOrderByStartedAtDesc(Timestamp since);
     
-    // 특정 호기 알림 전체 7일 이내
-    List<AlertEvent> findByMachine_IdAndStartedAtAfterOrderByStartedAtDesc(Integer machineId, Timestamp since);
-    
-    // 특정 호기 + 진행 중(STOP)
-    List<AlertEvent> findByMachine_IdAndEndedAtIsNullOrderByStartedAtDesc(Integer machineId);
-
-    // 특정 호기 + 레벨
-    List<AlertEvent> findByMachine_IdAndLevelOrderByStartedAtDesc(
-        Integer machineId, AlertLevel level
-    );
-    
     // 이벤트 완료
     List<AlertEvent> findByEndedAtIsNotNullAndStartedAtAfterOrderByStartedAtDesc(Timestamp since);
     
     // 진행 중(STOP) 알림
     List<AlertEvent> findByEndedAtIsNullOrderByStartedAtDesc();
-    
-    // 진행 중 + 특정 레벨 (최신순)  -> 전역 긴급 모달용
-    List<AlertEvent> findByEndedAtIsNullAndLevelOrderByStartedAtDesc(AlertLevel level);
     
     AlertEvent findTopByEndedAtIsNullAndLevelAndAcknowledgedAtIsNullOrderByIdDesc(AlertLevel level);
     
@@ -60,4 +46,7 @@ public interface AlertEventRepository extends JpaRepository<AlertEvent, Integer>
     		  ORDER BY a.acknowledgedAt ASC
     		""")
    List<AlertEvent> findRecheckTargets( @Param("level") AlertLevel level,@Param("before") Timestamp before);
+    
+   AlertEvent findTopByMachine_IdAndEndedAtIsNullOrderByStartedAtDesc(Integer machineId);
+   AlertEvent findTopByMachine_IdAndEndedAtIsNullAndLevelOrderByStartedAtDesc(Integer machineId, AlertLevel level);
 }
