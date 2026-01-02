@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 
 import lombok.Data;
 
+
 @Data
 public class AlertEventDTO {
 	
@@ -18,6 +19,8 @@ public class AlertEventDTO {
     private Timestamp startedAt;
     private Timestamp endedAt;
     private Timestamp acknowledgedAt;
+    
+    private String mode;
     
     public AlertEventDTO(AlertEvent alertEvent) {
     	this.id = alertEvent.getId();
