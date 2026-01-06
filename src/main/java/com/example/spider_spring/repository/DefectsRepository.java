@@ -19,12 +19,14 @@ public interface DefectsRepository extends JpaRepository<Defects, Integer>{
     long countTotalAfter(@Param("id") Integer id, @Param("after") LocalDateTime after);
 
     // 특정 시간 이후 불량 검사수
-    @Query("SELECT COUNT(d) FROM Defects d WHERE d.machine.id = :id AND d.createdAt > :after")
+    @Query("SELECT COUNT(d) FROM Defects d WHERE d.machine.id = :id AND d.createdAt > :after AND d.defectType != 'Normal'")
     long countRejectedAfter(@Param("id") Integer id, @Param("after") LocalDateTime after);
 
+    // 그래프용 통계 ('Normal' 제외)
     @Query("SELECT new com.example.spider_spring.domain.DefectsDTO(d.defectType, COUNT(d)) " +
            "FROM Defects d " +
     	   "WHERE d.createdAt >= :startDate AND d.createdAt < :endDate " +
+           "AND d.defectType != 'Normal' " +  // 불량 그래프에 'Nomal'제외
     	   "GROUP BY d.defectType")
     List<DefectsDTO> countDefectsByPeriod(@Param("startDate") LocalDateTime startDate,
     									  @Param("endDate") LocalDateTime endDate);
