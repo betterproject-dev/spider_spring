@@ -2,6 +2,7 @@ package com.example.spider_spring.service;
 import com.example.spider_spring.domain.NotionDTO;
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -12,8 +13,11 @@ import java.util.*;
 
 @Service
 public class NotionService {
-    private final String NOTION_TOKEN = ""; 
-    private final String DATABASE_ID = "";    
+    @Value("${notion.token}")
+    private String NOTION_TOKEN;
+    
+    @Value("${notion.database-id}")
+    private String DATABASE_ID;
 
     // ✅ 노션에 메모 저장
     public void saveToNotion(NotionDTO dto) {
