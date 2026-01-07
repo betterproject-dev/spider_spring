@@ -45,20 +45,20 @@ public class AlertEventController {
 	
 	// 알림 1건 상세(10분 후 확인창에서 사용)
 	@GetMapping("/{id:\\d+}")
-    public AlertEventDTO getOne(@PathVariable Integer id) {
+    public AlertEventDTO getOne(@PathVariable("id") Integer id) {
 		return alertEventService.getAlert(id);
 	}
 	
 	// 모달 "확인" 버튼 -> acknowledged_at 기록
 	@PostMapping("/{id}/ack")
-    public ResponseEntity<?> acknowledge(@PathVariable Integer id) {
+    public ResponseEntity<?> acknowledge(@PathVariable("id") Integer id) {
 		boolean ok = alertEventService.acknowledge(id);
 		return ResponseEntity.ok(Map.of("ok", ok));
 	}
 	
 	// "정상 가동" 선택 -> ended_at 기록 (이벤트 종료)
 	 @PostMapping("/{id}/resolve")
-	    public ResponseEntity<?> resolve(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+	    public ResponseEntity<?> resolve(@PathVariable("id") Integer id, @RequestBody Map<String, String> body) {
 		 String pin = body.get("pin");
 		 
 		 try {
