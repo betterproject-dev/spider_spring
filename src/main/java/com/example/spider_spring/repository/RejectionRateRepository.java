@@ -20,10 +20,15 @@ public interface RejectionRateRepository extends JpaRepository<RejectionRates, I
 	List<RejectionRates> findTodayRates(@Param("machineId") Integer machineId);
 
     // 2. 직전 7일 평균 데이터 가져오기 (최신순 7개)
-	@Query(value = "SELECT * FROM rejection_rates WHERE machine_number = :machineId " +
-			"AND created_at < CURDATE() " + // 오늘 이전 데이터만
-            "ORDER BY created_at DESC LIMIT 7", nativeQuery = true)
-	List<RejectionRates> findLast7Days(@Param("machineId") Integer machineId);
+	@Query(value = "SELECT DATE(created_at) as created_at, " +
+            "AVG(rejection_rate) as rejection_rate, " +
+            "SUM(total_inspected) as total_inspected, " +
+            "SUM(total_rejected) as total_rejected " +
+            "FROM rejection_rates " +
+            "WHERE machine_number = :machineId AND created_at < CURDATE() " +
+            "GROUP BY DATE(created_at) " +
+            "ORDER BY created_at ASC LIMIT 7", nativeQuery = true)
+	List<Object[]> findLast7Days(@Param("machineId") Integer machineId);
 	
 	// 특정 머신의 특정 시간 이후 데이터 한 건 찾기
     // 같은 분(Minute)에 이미 데이터가 있는지 확인하여 덮어쓰기 위해 사용합니다.

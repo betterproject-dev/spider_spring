@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.example.spider_spring.domain.DefectType;
 import com.example.spider_spring.domain.Defects;
 import com.example.spider_spring.domain.DefectsDTO;
 
@@ -25,9 +24,11 @@ public interface DefectsRepository extends JpaRepository<Defects, Integer>{
     // 그래프용 통계 ('Normal' 제외)
     @Query("SELECT new com.example.spider_spring.domain.DefectsDTO(d.defectType, COUNT(d)) " +
            "FROM Defects d " +
-    	   "WHERE d.createdAt >= :startDate AND d.createdAt < :endDate " +
+           "WHERE d.machine.id = :machineId " +
+    	   "AND d.createdAt >= :startDate AND d.createdAt < :endDate " +
            "AND d.defectType != 'Normal' " +  // 불량 그래프에 'Nomal'제외
     	   "GROUP BY d.defectType")
-    List<DefectsDTO> countDefectsByPeriod(@Param("startDate") LocalDateTime startDate,
+    List<DefectsDTO> countDefectsByPeriod(@Param("machineId") Integer machineId,
+    									  @Param("startDate") LocalDateTime startDate,
     									  @Param("endDate") LocalDateTime endDate);
 }
