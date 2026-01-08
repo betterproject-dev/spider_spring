@@ -1,11 +1,13 @@
 package com.example.spider_spring.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.spider_spring.domain.DefectsLogDTO;
 import com.example.spider_spring.domain.Machines;
 import com.example.spider_spring.domain.RejectionRates;
 import com.example.spider_spring.repository.DefectsRepository;
@@ -53,5 +55,11 @@ public class StatsService {
 		rejectionRateRepository.save(stats);
 		
 		System.out.println("LOG: 실시간 데이터 유입으로 통계 갱신 완료 -> " + rate + "%");
+	}
+
+	// 로그 조회
+	public List<DefectsLogDTO> getMachineStats(Integer machineId) {
+		List<DefectsLogDTO> logList = defectsRepository.findLogByMachineId(machineId);
+		return logList;
 	}
 }

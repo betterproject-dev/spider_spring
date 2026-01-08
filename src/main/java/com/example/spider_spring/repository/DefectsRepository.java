@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.example.spider_spring.domain.Defects;
 import com.example.spider_spring.domain.DefectsDTO;
+import com.example.spider_spring.domain.DefectsLogDTO;
 
 @Repository
 public interface DefectsRepository extends JpaRepository<Defects, Integer>{
@@ -29,4 +30,9 @@ public interface DefectsRepository extends JpaRepository<Defects, Integer>{
             "SUM(CASE WHEN d.weight = true THEN 1 ELSE 0 END)) " +
             "FROM Defects d WHERE d.machine.id = :machineId AND d.createdAt >= :startDate")
      DefectsDTO getDefectCounts(@Param("machineId") Integer machineId, @Param("startDate") LocalDateTime startDate);
+
+    @Query("SELECT new com.example.spider_spring.domain.DefectsLogDTO(" +
+            "d.id, d.label, d.crushed, d.discolored, d.weight, d.imageUrl, d.createdAt) " +
+            "FROM Defects d WHERE d.machine.id = :machineId ORDER BY d.createdAt DESC")
+    List<DefectsLogDTO> findLogByMachineId(@Param("machineId") Integer machineId);
 }
