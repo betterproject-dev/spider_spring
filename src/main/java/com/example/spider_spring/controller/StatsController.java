@@ -36,12 +36,11 @@ public class StatsController {
 	
 	// 막대 그래프용 (불량 유형별 통계)
 	@GetMapping("/defect-summary")
-	public ResponseEntity<List<DefectsDTO>> getSummary(
+	public ResponseEntity<DefectsDTO> getSummary(
 			@RequestParam(value = "machineId") Integer machineId,
 			@RequestParam(value = "type", defaultValue = "today") String type) {
 		
 		LocalDateTime start;
-		LocalDateTime end = LocalDateTime.now().plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
 		
 		if("7days".equalsIgnoreCase(type) || "week".equalsIgnoreCase(type)) {
 			// 현재로부터 7일 전 00:00부터
@@ -51,7 +50,7 @@ public class StatsController {
 			start = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
 		}
 		
-		return ResponseEntity.ok(defectsRepository.countDefectsByPeriod(machineId, start, end));
+		return ResponseEntity.ok(defectsRepository.getDefectCounts(machineId, start));
 	}
 	
 	// 선 그래프용 (불량률 추이)

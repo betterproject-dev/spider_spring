@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DefectsDTO {
-	private DefectType defectType;
-	private Long count;
+	private Long labelCount;
+	private Long crushedCount;
+	private Long discoloredCount;
+	private Long weightCount;
 }

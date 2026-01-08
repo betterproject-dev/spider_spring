@@ -28,14 +28,21 @@ public class Defects {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
+	
+	private Boolean label;
+	private Boolean crushed;
+	private Boolean discolored;
+	private Boolean weight;
+	
+	@Column(name = "image_url")
+	private String imageUrl;
+	
+	@Column(name = "is_defect")
+	private Boolean isDefect;
 		
 	@Column(name = "created_at", insertable = false, updatable = false)	
 	@CreationTimestamp
 	private Timestamp createdAt;
-	
-	@Column(name = "defect_type")
-	@Enumerated(EnumType.STRING)
-	private DefectType defectType;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "machine_number")
