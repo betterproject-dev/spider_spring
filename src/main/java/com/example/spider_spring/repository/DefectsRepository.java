@@ -18,17 +18,15 @@ public interface DefectsRepository extends JpaRepository<Defects, Integer>{
     long countTotalAfter(@Param("id") Integer id, @Param("after") LocalDateTime after);
 
     // 특정 시간 이후 불량 검사수
-    @Query("SELECT COUNT(d) FROM Defects d WHERE d.machine.id = :id AND d.createdAt > :after AND d.defectType != 'Normal'")
+    @Query("SELECT COUNT(d) FROM Defects d WHERE d.machine.id = :id AND d.createdAt > :after AND d.isDefect = true")
     long countRejectedAfter(@Param("id") Integer id, @Param("after") LocalDateTime after);
 
-    // 그래프용 통계 ('Normal' 제외)
-    @Query("SELECT new com.example.spider_spring.domain.DefectsDTO(d.defectType, COUNT(d)) " +
-           "FROM Defects d " +
-           "WHERE d.machine.id = :machineId " +
-    	   "AND d.createdAt >= :startDate AND d.createdAt < :endDate " +
-           "AND d.defectType != 'Normal' " +  // 불량 그래프에 'Nomal'제외
-    	   "GROUP BY d.defectType")
-    List<DefectsDTO> countDefectsByPeriod(@Param("machineId") Integer machineId,
-    									  @Param("startDate") LocalDateTime startDate,
-    									  @Param("endDate") LocalDateTime endDate);
+    // 그래프용 통계
+    @Query("SELECT new com.example.spider_spring.domain.DefectsDTO(" +
+    		"SUM(CASE WHEN d.label = true THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.crushed = true THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.discolored = true THEN 1 ELSE 0 END), " +
+            "SUM(CASE WHEN d.weight = true THEN 1 ELSE 0 END)) " +
+            "FROM Defects d WHERE d.machine.id = :machineId AND d.createdAt >= :startDate")
+     DefectsDTO getDefectCounts(@Param("machineId") Integer machineId, @Param("startDate") LocalDateTime startDate);
 }
