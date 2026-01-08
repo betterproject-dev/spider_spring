@@ -38,3 +38,26 @@ out/
 
 ### Spring Boot secrets ###
 src/main/resources/application-local.properties
+
+### MacOS ###
+.DS_Store
+
+### Log files ###
+*.log
+logs/
+
+### Backup files ###
+*.bak
+*.tmp
+
+### OS 특정 설정 (자동 생성 폴더) ###
+.metadata/
+RemoteSystemsTempFiles/
+
+### Database (로컬 테스트용 DB가 있는 경우) ###
+*.db
+*.sqlite
+
+### Local Environment Secrets ###
+.env
+.env.local

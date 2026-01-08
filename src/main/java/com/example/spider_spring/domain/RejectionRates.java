@@ -21,33 +21,26 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "sensors")
-public class Sensors {
-	
+@Table(name = "rejection_rates")
+public class RejectionRates {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "machine_number")
-	private Machines machine;
-	
-	// DB에서 자동 생성되는 컬럼이면 아래처럼 두는게 깔끔함
-	@Column(name = "created_at", insertable = false, updatable = false)
+	@Column(name = "created_at")
 	@CreationTimestamp
 	private Timestamp createdAt;
 	
-	@Column(name = "temperature_DS18B20")
-	private Float temperature_DS18B20;
+	@Column(name = "rejection_rate")
+	private Double rejectionRate;  // 불량률(%)
 	
-	@Column(name = "humidity")
-	private Float humidity;
+	@Column(name = "total_inspected")
+	private Integer totalInspected; // 총 검사 개수
 	
-	@Column(name = "noise")
-	private Float noise;
+	@Column(name = "total_rejected")
+	private Integer totalRejected; // 총 불량 개수
 	
-	@Column(name = "leak")
-	private Boolean leak;
-	
-
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "machine_number")
+	private Machines machine;
 }

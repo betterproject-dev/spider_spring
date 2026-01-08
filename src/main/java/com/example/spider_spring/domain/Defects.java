@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,33 +23,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "sensors")
-public class Sensors {
-	
+@Table(name = "defects")
+public class Defects {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "machine_number")
-	private Machines machine;
+	private Boolean label;
+	private Boolean crushed;
+	private Boolean discolored;
+	private Boolean weight;
 	
-	// DB에서 자동 생성되는 컬럼이면 아래처럼 두는게 깔끔함
-	@Column(name = "created_at", insertable = false, updatable = false)
+	@Column(name = "image_url")
+	private String imageUrl;
+	
+	@Column(name = "is_defect")
+	private Boolean isDefect;
+		
+	@Column(name = "created_at", insertable = false, updatable = false)	
 	@CreationTimestamp
 	private Timestamp createdAt;
 	
-	@Column(name = "temperature_DS18B20")
-	private Float temperature_DS18B20;
-	
-	@Column(name = "humidity")
-	private Float humidity;
-	
-	@Column(name = "noise")
-	private Float noise;
-	
-	@Column(name = "leak")
-	private Boolean leak;
-	
-
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "machine_number")
+	private Machines machine;
 }
