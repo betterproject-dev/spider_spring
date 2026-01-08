@@ -163,7 +163,7 @@ public class SensorService {
 					.mapToDouble(Sensors::getTemperature_DS18B20 ) // 숫자들만 뽑아내서 
 					.average()
 					.orElse(0.0);
-			dto.setTemperature_DS18B20(tempAvg);
+			dto.setTemperature_DS18B20(Math.round(tempAvg * 100.0) / 100.0f);
 			
 			// 습도 평균
 			float humAvg = (float) data.stream()
@@ -171,7 +171,7 @@ public class SensorService {
 					.mapToDouble(Sensors::getHumidity)
 					.average()
 					.orElse(0.0);
-			dto.setHumidity(humAvg);
+			dto.setHumidity(Math.round(humAvg * 100.0) / 100.0f);
 			
 			// 소음 평균
 			float noiseAvg = (float) data.stream()
@@ -179,7 +179,7 @@ public class SensorService {
 					.mapToDouble(Sensors::getNoise)
 					.average()
 					.orElse(0.0);
-			dto.setNoise(noiseAvg);
+			dto.setNoise(Math.round(noiseAvg * 100.0) / 100.0f);
 			
 			// 누수 여부: 하나라도 true가 있으면 true
 	        dto.setLeak(data.stream()

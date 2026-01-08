@@ -60,6 +60,9 @@ public class StatsService {
 	// 로그 조회
 	public List<DefectsLogDTO> getMachineStats(Integer machineId) {
 		List<DefectsLogDTO> logList = defectsRepository.findLogByMachineId(machineId);
+
+		logList.removeIf(log -> !log.getCrushed()&&!log.getDiscolored()&&!log.getLabel()&&!log.getWeight());
+		
 		return logList;
 	}
 }
