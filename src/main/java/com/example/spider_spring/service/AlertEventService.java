@@ -15,7 +15,6 @@ import com.example.spider_spring.domain.AlertEventDTO;
 import com.example.spider_spring.domain.AlertLevel;
 import com.example.spider_spring.repository.AlertEventRepository;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -58,12 +57,6 @@ public class AlertEventService {
 		String a = normalizePin(adminPin);
 		return p != null && a != null && p.equals(a);
 	}
-	
-	@PostConstruct
-	public void checkPinLoaded() {
-	  System.out.println("adminPin loaded? = [" + adminPin + "]");
-	}
-	
 	
 	@Transactional(readOnly = true)
 	public List<AlertEventDTO> getAllAlerts() {
