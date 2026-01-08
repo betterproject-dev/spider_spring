@@ -1,5 +1,8 @@
 package com.example.spider_spring.controller;
 
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,8 +29,13 @@ public class HeartbeatController {
 	}
 	
 	@GetMapping("/status/{machineId}")
-	public String status(@PathVariable Integer machineId) {
-		return heartbeatService.checkStatus(machineId);
+	public ResponseEntity<Map<String, String>> status(@PathVariable Integer machineId) {
+
+	    String status = heartbeatService.checkStatus(machineId);
+
+	    return ResponseEntity.ok(
+	        Map.of("status", status)
+	    );
 	}
 	
 

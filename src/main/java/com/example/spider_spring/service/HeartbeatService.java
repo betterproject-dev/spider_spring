@@ -37,7 +37,7 @@ public class HeartbeatService {
 
         return repo.findById(machineId)
             .map(hb -> {
-                if (Duration.between(hb.getLastSeen(), LocalDateTime.now()).getSeconds() > 30) {
+                if (Duration.between(hb.getLastSeen(), LocalDateTime.now()).getSeconds() > 10) {
                     return "OFFLINE";
                 }
                 return "ONLINE";
