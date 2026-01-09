@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.spider_spring.domain.RejectionRatesDTO;
 import com.example.spider_spring.domain.DefectsDTO;
+import com.example.spider_spring.domain.DefectsLogDTO;
 import com.example.spider_spring.domain.RejectionRates;
 import com.example.spider_spring.repository.DefectsRepository;
 import com.example.spider_spring.repository.RejectionRateRepository;
@@ -107,5 +108,10 @@ public class StatsController {
 	    statsService.updateMachineStats(machineId);
 	    
 	    return ResponseEntity.ok("Stats Updated Successfully");
+	}
+
+	@GetMapping("/getLog/{machineId}")
+	public ResponseEntity<List<DefectsLogDTO>> getLog(@PathVariable("machineId") Integer machineId) {
+		return ResponseEntity.ok(statsService.getMachineStats(machineId));
 	}
 }
