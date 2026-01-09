@@ -1,15 +1,19 @@
 package com.example.spider_spring.service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.spider_spring.domain.DefectsDTO;
 import com.example.spider_spring.domain.DefectsLogDTO;
 import com.example.spider_spring.domain.Machines;
 import com.example.spider_spring.domain.RejectionRates;
+import com.example.spider_spring.domain.RejectionRatesDTO;
 import com.example.spider_spring.repository.DefectsRepository;
 import com.example.spider_spring.repository.RejectionRateRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +24,54 @@ public class StatsService {
 
 	@Autowired private DefectsRepository defectsRepository;
 	@Autowired private RejectionRateRepository rejectionRateRepository;
+	
+	public DefectsDTO getDefectSummary(Integer machineId, String type) {
+		LocalDateTime start = calculateStartTime(type);
+		return defectsRepository.getDefectCounts(machineId, start);
+	}
+	
+	public List<RejectionRatesDTO> getRejectionTrend(Integer machineId, String type) {
+		if ("today".equals(type)) {
+	        List<RejectionRates> rates = rejectionRateRepository.findTodayRates(machineId);
+	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+	        
+	        return rates.stream().map(r -> 
+	            new RejectionRatesDTO(
+	                r.getCreatedAt().toLocalDateTime().format(formatter), 
+	                r.getRejectionRate(), 
+	                r.getTotalInspected(), 
+	                r.getTotalRejected()
+	            )
+	        ).collect(Collectors.toList());
+	    } else {
+	        // 7일 데이터 조회 (Object[] 배열 처리)
+	        List<Object[]> rawData = rejectionRateRepository.findLast7Days(machineId);
+	        
+	        return rawData.stream().map(obj -> {
+	        	// obj[1]은 AVG(rejection_rate) 결과값이므로 소수점이 길 수 있음
+	        	double rawRate = ((Number) obj[1]).doubleValue();
+	        	// 소수점 둘째 자리까지 반올림 처리
+	        	double formattedRate = Math.round(rawRate * 100.0) / 100.0;
+	        	
+	            // obj[0]: 날짜(Date), obj[1]: 평균불량률, obj[2]: 총검사수, obj[3]: 총불량수
+	            return new RejectionRatesDTO(
+	                obj[0].toString(), // "2026-01-06" 형태
+	                formattedRate,
+	                ((Number) obj[2]).intValue(),
+	                ((Number) obj[3]).intValue()
+	            );
+	        }).collect(Collectors.toList());
+	    }
+	}
+	
+	private LocalDateTime calculateStartTime(String type) {
+		if("7days".equalsIgnoreCase(type) || "week".equalsIgnoreCase(type)) {
+			// 현재로부터 7일 전 00:00부터
+			return LocalDateTime.now().minusDays(7).withHour(0).withMinute(0).withSecond(0).withNano(0);
+		}
+		// 오늘 00:00부터
+		return LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+	}
 
 	@Transactional
 	public void updateMachineStats(Integer machineId) {
