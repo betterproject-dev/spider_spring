@@ -44,7 +44,7 @@ public class AlertEventController {
 	}
 	
 	// 알림 1건 상세(10분 후 확인창에서 사용)
-	@GetMapping("/{id:\\d+}")
+	@GetMapping("/{id:\\d+}") // 숫자인 id만 이 메서드로 받겠다라는 정규식 라우팅, id는 숫자만 허용 1자리 이상
     public AlertEventDTO getOne(@PathVariable("id") Integer id) {
 		return alertEventService.getAlert(id);
 	}
