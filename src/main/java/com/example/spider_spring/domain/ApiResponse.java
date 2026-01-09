@@ -10,10 +10,16 @@ public class ApiResponse<T> {
 	private T data;
 	private String message;
 	
-	// 성공 응답 정적 팩토리 메서드
+	// 성공 응답 정적 팩토리 메서드(데이터만 보낼 때)
 	public static <T> ApiResponse<T> success(T data) {
 		return new ApiResponse<>(true, data, null);
 	}
+	
+	// 성공 응답 정적 팩토리 메서드(데이터와 메세지를 모두 보낼 때)
+		public static <T> ApiResponse<T> success(T data, String message) {
+			return new ApiResponse<>(true, data, message);
+		}
+		
 	
 	// 실패 응답 정적 팩토리 메서드
 	public static <T> ApiResponse<T> error(String message) {
