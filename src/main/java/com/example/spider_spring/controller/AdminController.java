@@ -1,8 +1,10 @@
 package com.example.spider_spring.controller;
 
 import org.springframework.web.bind.annotation.*;
+
+import com.example.spider_spring.domain.ApiResponse;
+
 import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api")
@@ -10,17 +12,16 @@ import java.util.HashMap;
 public class AdminController {
 
 	@PostMapping("/check-admin")
-	public Map<String, Object> checkAdmin(@RequestBody Map<String, String> request) {
+	public ApiResponse<Void> checkAdmin(@RequestBody Map<String, String> request) {
 		String inputNumber = request.get("number");
-		Map<String, Object> response = new HashMap<>();
 		
 		if ("7777".equals(inputNumber)) {
-			response.put("success", true);
-			response.put("message", "관리자 인증 성공!");
+			// 성공 응답: 데이터는 null, 성공 메시지 포함
+			return ApiResponse.success(null, "관리자 인증 성공!");
 		} else {
-			response.put("success", false);
-			response.put("message", "번호가 일치하지 않습니다.");
+			// 실패 응답: ApiResponse.error 메서드 사용
+			return ApiResponse.error("번호가 일치하지 않습니다.");
 		}
-		return response;
+		
 	}
 }
