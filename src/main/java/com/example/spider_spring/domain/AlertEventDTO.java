@@ -19,6 +19,7 @@ public class AlertEventDTO {
     private Timestamp startedAt;
     private Timestamp endedAt;
     private Timestamp acknowledgedAt;
+    private String activeKey;
     
     private String mode;
     
@@ -34,5 +35,6 @@ public class AlertEventDTO {
         this.startedAt = alertEvent.getStartedAt();
         this.endedAt = alertEvent.getEndedAt();
         this.acknowledgedAt = alertEvent.getAcknowledgedAt();
+        this.activeKey = alertEvent.getActiveKey();
     }
 }
