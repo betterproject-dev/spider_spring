@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,7 +31,11 @@ import lombok.NoArgsConstructor;
 	           @Index(name = "idx_alert_started", columnList = "started_at"),
 	           @Index(name = "idx_alert_ended", columnList = "ended_at"),
 	           @Index(name = "idx_alert_ack", columnList = "acknowledged_at")
-	   })
+	   },
+	uniqueConstraints = {
+		@UniqueConstraint(name = "uk_active_event", columnNames = {"active_key", "ended_at"})
+	}
+	)
 public class AlertEvent {
 	
 
@@ -69,6 +74,10 @@ public class AlertEvent {
     // 관리자가 이 알림을 확인 클릭한 시간
     @Column(name = "acknowledged_at")
     private Timestamp acknowledgedAt;
+    
+    // 핵심 컬럼
+    @Column(name = "active_key", length = 64)
+    private String activeKey;
 
     // started_at 기본값: Flask가 넣든, Spring이 넣든 둘 중 하나는 항상 넣어야 함
     @PrePersist

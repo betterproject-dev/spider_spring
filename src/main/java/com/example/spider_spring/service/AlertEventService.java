@@ -88,22 +88,48 @@ public class AlertEventService {
 	}
 	
 	// 모달 "확인" 버튼 -> ACK 저장
+	/**
+	   * 모달 "확인" 버튼 -> acknowledged_at 기록
+	   * - update row 수가 1이면 성공
+	   * - 0이면: 이미 종료/이미 ACK/없는 ID
+	   */
 	@Transactional
 	public boolean acknowledge(Integer alertEventId) {
+		int updated = alertEventRepository.acknowledge(alertEventId, nowUtcTs());
+		if (updated > 0) return true;
 		if (!alertEventRepository.existsById(alertEventId)) {
 			throw new NoSuchElementException("AlertEvent not found: " + alertEventId);
 		}
-		return alertEventRepository.acknowledge(alertEventId, nowUtcTs()) > 0;
+		return false;
 	}
 	
 	// "정상 가동" 선택 -> 이벤트 종료
+	/**
+	   * "정상 가동" -> ended_at 기록 + active_key NULL (Repository에서 처리)
+	   * - update row 수가 1이면 성공
+	   * - 0이면: 이미 종료/없는 ID
+	   */
 	@Transactional
 	public boolean resolve(Integer alertEventId) {
+		int updated = alertEventRepository.resolve(alertEventId, nowUtcTs());
+	    if (updated > 0) return true;
 		if (!alertEventRepository.existsById(alertEventId)) {
 			throw new NoSuchElementException("AlertEvent not found: " + alertEventId);
 		}
-		return alertEventRepository.resolve(alertEventId, nowUtcTs()) > 0;
+		return false;
 	}
+	
+	 /**
+	   * PIN 포함 resolve
+	   * - PIN 틀리면 INVALID_PIN throw
+	   */
+	 @Transactional
+	 public boolean resolveWithPin(Integer alertEventId, String pin) {
+	    if (!isValidPin(pin)) {
+	      throw new IllegalArgumentException("INVALID_PIN");
+	    }
+	    return resolve(alertEventId);
+	  }
 	
 	// 10분 후 확인창 띄울 때: 현재 이벤트가 아직 진행 중인지 확인
 	@Transactional(readOnly = true)
@@ -113,57 +139,62 @@ public class AlertEventService {
 		return new AlertEventDTO(e);
 	}
 	
+	/**
+	   * 전역 긴급 모달용:
+	   * 1) ACK 안 한 EMERGENCY 최신 1건 -> mode=ALERT
+	   * 2) ACK 했고 10분 지난 EMERGENCY 중 가장 오래된 1건 -> mode=RECHECK
+	   */
 	@Transactional(readOnly = true)
 	public AlertEventDTO getNextEmergencyForModal() {
 
-		 // ACK 안 한 EMERGENCY 최신 1건 (id desc)
 	    AlertEvent unacked =
 	        alertEventRepository
 	            .findTopByEndedAtIsNullAndLevelAndAcknowledgedAtIsNullOrderByIdDesc(AlertLevel.EMERGENCY);
 
 	    if (unacked != null) {
-	        AlertEventDTO dto = new AlertEventDTO(unacked);
-	        dto.setMode("ALERT");
-	        return dto;
+	      AlertEventDTO dto = new AlertEventDTO(unacked);
+	      dto.setMode("ALERT");
+	      return dto;
 	    }
 
-	    //  ACK 했고 + 10분 지난 것 중 가장 오래된 것 (recheck용)
 	    Timestamp before = beforeMinutes(RECHECK_MINUTES);
 	    List<AlertEvent> rechecks =
 	        alertEventRepository.findRecheckTargets(AlertLevel.EMERGENCY, before);
 
 	    if (!rechecks.isEmpty()) {
-	        AlertEventDTO dto = new AlertEventDTO(rechecks.get(0));
-	        dto.setMode("RECHECK");
-	        return dto;
+	      AlertEventDTO dto = new AlertEventDTO(rechecks.get(0));
+	      dto.setMode("RECHECK");
+	      return dto;
 	    }
 
 	    return null;
-	}
+	  }
 	
+	
+	/**
+	   * 특정 machine의 진행중 EMERGENCY 1건을 종료
+	   * - (현재 방식) machine_id 기준으로 최신 진행중 EMERGENCY를 찾아 resolve
+	   */
 	@Transactional
 	public boolean resolveActiveByMachine(Integer machineId) {
-	  AlertEvent ongoing = alertEventRepository
-	      .findTopByMachine_IdAndEndedAtIsNullAndLevelOrderByStartedAtDesc(
-	          machineId, AlertLevel.EMERGENCY
-	      );
+	    AlertEvent ongoing = alertEventRepository
+	        .findTopByMachine_IdAndEndedAtIsNullAndLevelOrderByStartedAtDesc(machineId, AlertLevel.EMERGENCY);
 
-	  if (ongoing == null) return false;
-	  return alertEventRepository.resolve(ongoing.getId(), nowUtcTs()) > 0;
+	    if (ongoing == null) return false;
+	    return alertEventRepository.resolve(ongoing.getId(), nowUtcTs()) > 0;
+	}
+
+	  /**
+	   * (추천) active_key 기반으로 진행중을 찾고 싶으면 이런 메서드도 추가 가능
+	   * - Flask에서 active_key를 "EMERGENCY:{machine_number}"로 넣는 구조와 맞춤
+	   */
+	@Transactional
+	public boolean resolveActiveByMachineActiveKey(Integer machineNumber) {
+	    String activeKey = "EMERGENCY:" + machineNumber;
+	    AlertEvent ongoing = alertEventRepository.findTopByActiveKeyAndEndedAtIsNullOrderByStartedAtDesc(activeKey);
+	    if (ongoing == null) return false;
+	    return alertEventRepository.resolve(ongoing.getId(), nowUtcTs()) > 0;
 	}
 	
-	@Transactional
-	public boolean resolveWithPin(Integer alertEventId, String pin) {
-		if (!alertEventRepository.existsById(alertEventId)) {
-			throw new NoSuchElementException("AlertEvent not found: " + alertEventId);
-		}
-		
-		if (!isValidPin(pin)) {
-			// 400으로 내려가게 컨트롤러에서 처리할 예정
-			throw new IllegalArgumentException("INVALID_PIN");
-		}
-		
-		return alertEventRepository.resolve(alertEventId, nowUtcTs()) > 0;
-	}
 
 }

@@ -15,38 +15,65 @@ import com.example.spider_spring.domain.AlertLevel;
 @Repository
 public interface AlertEventRepository extends JpaRepository<AlertEvent, Integer>{
 	
-	// 전체 알림 7일 이내
+	// 전체 알림 (7일)
     List<AlertEvent> findByStartedAtAfterOrderByStartedAtDesc(Timestamp since);
-    
-    // 이벤트 완료
+
+    // 완료 알림
     List<AlertEvent> findByEndedAtIsNotNullAndStartedAtAfterOrderByStartedAtDesc(Timestamp since);
-    
-    // 진행 중(STOP) 알림
+
+    // 진행중 전체
     List<AlertEvent> findByEndedAtIsNullOrderByStartedAtDesc();
-    
+
+    // ACK 안한 EMERGENCY 최신 1건
     AlertEvent findTopByEndedAtIsNullAndLevelAndAcknowledgedAtIsNullOrderByIdDesc(AlertLevel level);
-    
-    // acknowledged_at 찍기
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update AlertEvent a set a.acknowledgedAt = :ts where a.id = :id and a.acknowledgedAt is null")
-    int acknowledge(@Param("id") Integer id, @Param("ts") Timestamp ts);
-    
-    // 종료 처리: ended_at 찍기 (이미 종료됐으면 무시), resolve = 문제 해결 처리
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update AlertEvent a set a.endedAt = :ts where a.id = :id and a.endedAt is null")
-    int resolve(@Param("id") Integer id, @Param("ts") Timestamp ts);
-    
-    
+
+    // ================================
+    //  RECHECK 대상
+    // ================================
     @Query("""
-    		  SELECT a FROM AlertEvent a
-    		  WHERE a.endedAt IS NULL
-    		    AND a.level = :level
-    		    AND a.acknowledgedAt IS NOT NULL
-    		    AND a.acknowledgedAt <= :before
-    		  ORDER BY a.acknowledgedAt ASC
-    		""")
-   List<AlertEvent> findRecheckTargets( @Param("level") AlertLevel level,@Param("before") Timestamp before);
-    
-   AlertEvent findTopByMachine_IdAndEndedAtIsNullOrderByStartedAtDesc(Integer machineId);
-   AlertEvent findTopByMachine_IdAndEndedAtIsNullAndLevelOrderByStartedAtDesc(Integer machineId, AlertLevel level);
+      select e from AlertEvent e
+      where e.endedAt is null
+        and e.level = :level
+        and e.acknowledgedAt is not null
+        and e.acknowledgedAt <= :before
+      order by e.acknowledgedAt asc
+    """)
+    List<AlertEvent> findRecheckTargets(
+        @Param("level") AlertLevel level,
+        @Param("before") Timestamp before
+    );
+
+    // ================================
+    //  ACK
+    // ================================
+    @Modifying
+    @Query("""
+      update AlertEvent e
+         set e.acknowledgedAt = :ts
+       where e.id = :id
+         and e.endedAt is null
+         and e.acknowledgedAt is null
+    """)
+    int acknowledge(@Param("id") Integer id, @Param("ts") Timestamp ts);
+
+    // ================================
+    //  RESOLVE (active_key 반드시 NULL 처리)
+    // ================================
+    @Modifying
+    @Query("""
+      update AlertEvent e
+         set e.endedAt = :ts,
+             e.activeKey = null
+       where e.id = :id
+         and e.endedAt is null
+    """)
+    int resolve(@Param("id") Integer id, @Param("ts") Timestamp ts);
+
+    // ================================
+    //  active_key 기반 진행중 조회 (중복 방지 핵심)
+    // ================================
+    AlertEvent findTopByActiveKeyAndEndedAtIsNullOrderByStartedAtDesc(String activeKey);
+
+    // fallback (기존)
+    AlertEvent findTopByMachine_IdAndEndedAtIsNullAndLevelOrderByStartedAtDesc(Integer machineId, AlertLevel level);
 }
